@@ -110,4 +110,4 @@ free tier is on you, and so is anything that happens to your account.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE). Contributions welcome, read [CONTRIBUTING.md](CONTRIBUTING.md) first.
