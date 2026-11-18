@@ -26,6 +26,29 @@ your client ──HTTP/1.1 or h2c──> metaphor-bridge :8190 ──HTTP/2─�
 Measured throughput and rate-limit behaviour: **[BENCHMARK.md](BENCHMARK.md)**
 (reproduce with `python3 bench/bench.py`).
 
+## Benchmarks
+
+Measured 2026-11-18 through this bridge (single-stream, `max_tokens=512`,
+`temperature=0`, median of 2 runs, 4 vCPU VPS with US egress). Full methodology and
+caveats: [BENCHMARK.md](BENCHMARK.md).
+
+| Model | TPS | Output tokens | Wall | Stream TTFT |
+| --- | ---: | ---: | ---: | ---: |
+| `glm-5.3` | 135.6 | 512¹ | 3.88 s | 1.28 s |
+| `kimi-k3` | 99.2 | 512 | 5.65 s | 0.76 s |
+| `qwen3-coder-next` | 88.6 | 374 | 5.25 s | 0.79 s |
+| `deepseek-v4-1-flash` | 87.2 | 512¹ | 8.14 s | 0.28 s |
+| `kimi-k3-1-pro` | 80.0 | 512 | 6.40 s | 0.81 s |
+| `deepseek-v4-pro` | 67.1 | 242 | 4.47 s | 1.13 s |
+| `minimax-m3` | 32.7 | 210 | 6.99 s | 1.05 s |
+
+¹ reasoning only — these two spent the whole budget on thinking and returned empty
+`content`; give them ≥1–2k `max_tokens` for visible output.
+
+Rate limiter: ~25–30 sequential requests go through, then
+`429 Too many concurrent Darwin requests` with `retry-after: 2` until the window
+drains — the reason the bridge queues requests (`METAPHOR_CONCURRENCY`, default 1).
+
 ## Build
 
 ```bash
