@@ -35,8 +35,9 @@ func pkcePath() string     { return filepath.Join(baseDir, "pkce.json") }
 func loginURLPath() string { return filepath.Join(baseDir, "login_url.txt") }
 
 type tokenStore struct {
-	mu  sync.Mutex
-	tok map[string]any
+	mu    sync.Mutex
+	tok   map[string]any
+	mtime time.Time
 }
 
 func newTokenStore() *tokenStore {
@@ -53,6 +54,20 @@ func (s *tokenStore) load() {
 	var m map[string]any
 	if json.Unmarshal(b, &m) == nil {
 		s.tok = m
+	}
+	if st, err := os.Stat(tokensPath()); err == nil {
+		s.mtime = st.ModTime()
+	}
+}
+
+// reloadIfChanged picks up tokens minted by another process (auth gh/refresh).
+func (s *tokenStore) reloadIfChanged() {
+	st, err := os.Stat(tokensPath())
+	if err != nil {
+		return
+	}
+	if s.mtime.IsZero() || st.ModTime().After(s.mtime) {
+		s.load()
 	}
 }
 
@@ -95,6 +110,7 @@ func jwtExp(tok string) int64 {
 func (s *tokenStore) AccessToken() (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.reloadIfChanged()
 	if s.tok == nil {
 		s.load()
 	}

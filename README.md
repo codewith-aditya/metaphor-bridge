@@ -20,8 +20,10 @@ your client ──HTTP/1.1 or h2c──> metaphor-bridge :8190 ──HTTP/2─�
 - Automatic access-token refresh, driven by the JWT `exp` claim
 - Request queue — the upstream allows only ~1–2 in-flight requests
 - `429`/`503` retry with `Retry-After`
+- Egress proxy support — `http://`, `https://` (self-signed allowed) and `socks5://`, applied to the
+  gateway *and* the auth hops (useful when GitHub rate-limits your IP)
 - HTTP/2 upstream, h2c downstream (`curl --http2-prior-knowledge http://127.0.0.1:8190/v1/models`)
-- `/healthz` for token expiry + concurrency
+- `/healthz` for token expiry + concurrency, `/debug/ip` to see the egress IP in use
 
 Measured throughput and rate-limit behaviour: **[BENCHMARK.md](BENCHMARK.md)**
 (reproduce with `python3 bench/bench.py`).
@@ -90,7 +92,16 @@ cookies and the whole GitHub → WorkOS → code chain is walked for you:
 ```bash
 ./metaphor-go serve                     # 127.0.0.1:8190
 METAPHOR_CONCURRENCY=2 ./metaphor-go serve
+
+# egress through a proxy (HTTP CONNECT, HTTPS with a self-signed cert, or SOCKS5)
+METAPHOR_PROXY='http://user:pass@host:8080' ./metaphor-go serve
+METAPHOR_PROXY='https://user:pass@gw.example.com:443' METAPHOR_PROXY_INSECURE=1 ./metaphor-go serve
+METAPHOR_PROXY='socks5://127.0.0.1:1080' ./metaphor-go serve
 ```
+
+The proxy applies to **every** outbound hop: the model gateway, token refresh, and the
+`auth` subcommands (handy when GitHub rate-limits your IP — `auth gh` then runs through
+the proxy too). `curl -sS localhost:8190/debug/ip` shows which egress you are on.
 
 Systemd unit: `systemd/metaphor-bridge-go.service` (edit `ExecStart`/`METAPHOR_DIR`).
 
@@ -108,6 +119,8 @@ Any OpenAI SDK works: `base_url = http://127.0.0.1:8190/v1`, `api_key` = anythin
 | --- | --- | --- |
 | `METAPHOR_PORT` | `8190` | listen port (127.0.0.1 only) |
 | `METAPHOR_CONCURRENCY` | `1` | max in-flight upstream requests |
+| `METAPHOR_PROXY` | *(empty)* | egress proxy: `http://`, `https://`, `socks5://` |
+| `METAPHOR_PROXY_INSECURE` | `false` | skip TLS verification of the proxy itself |
 | `METAPHOR_DIR` | `/root/metaphor` | where `tokens.json` / `pkce.json` live |
 
 ## Things that bite

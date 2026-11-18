@@ -32,9 +32,12 @@ import (
 
 const upstreamBase = "https://llms.withmetaphor.com"
 
+const version = "1.1.0"
+
 var (
 	httpClient = newHTTPClient()
 	logger     = log.New(os.Stdout, "", log.LstdFlags)
+	proxyCfg   *proxyConfig
 )
 
 func logf(format string, args ...any) { logger.Printf(format, args...) }
@@ -56,6 +59,19 @@ func newHTTPClient() *http.Client {
 	}
 }
 
+// clientThroughProxy builds a client whose dialer goes through pc (nil = direct).
+func clientThroughProxy(pc *proxyConfig) *http.Client {
+	c := newHTTPClient()
+	if pc == nil {
+		return c
+	}
+	tr := c.Transport.(*http.Transport)
+	tr.Proxy = nil                  // the dialer already does the tunnelling
+	tr.DialContext = pc.dialContext // CONNECT / SOCKS5
+	tr.ForceAttemptHTTP2 = true
+	return c
+}
+
 func urlQueryEscape(s string) string { return url.QueryEscape(s) }
 
 // ---------- server ----------
@@ -75,10 +91,27 @@ func (b *bridge) handler() http.Handler {
 		}
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":      "ok",
+			"version":     version,
 			"token_ok":    err == nil,
 			"token_exp":   time.Unix(exp, 0).Format(time.RFC3339),
 			"upstream":    upstreamBase,
 			"concurrency": cap(b.sem),
+			"proxy":       proxyCfg.String(),
+		})
+	})
+	mux.HandleFunc("/debug/ip", func(w http.ResponseWriter, r *http.Request) {
+		req, _ := http.NewRequestWithContext(r.Context(), "GET", "https://api.ipify.org", nil)
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			writeJSONError(w, 502, "proxy_check_failed", err.Error())
+			return
+		}
+		defer resp.Body.Close()
+		ip, _ := io.ReadAll(io.LimitReader(resp.Body, 64))
+		json.NewEncoder(w).Encode(map[string]any{
+			"egress_ip": string(ip),
+			"proxy":     proxyCfg.String(),
+			"proto":     resp.Proto,
 		})
 	})
 	mux.HandleFunc("/v1/", b.proxy)
@@ -220,10 +253,24 @@ func serve(port int, concurrency int) error {
 
 func main() {
 	var (
-		port        = flag.Int("port", envInt("METAPHOR_PORT", 8190), "listen port")
-		concurrency = flag.Int("concurrency", envInt("METAPHOR_CONCURRENCY", 1), "max in-flight upstream requests")
+		port          = flag.Int("port", envInt("METAPHOR_PORT", 8190), "listen port")
+		concurrency   = flag.Int("concurrency", envInt("METAPHOR_CONCURRENCY", 1), "max in-flight upstream requests")
+		proxyURL      = flag.String("proxy", os.Getenv("METAPHOR_PROXY"), "egress proxy: http://user:pass@host:port, https://…, socks5://…")
+		proxyInsecure = flag.Bool("proxy-insecure", envBool("METAPHOR_PROXY_INSECURE", false), "skip TLS verification of the proxy itself (self-signed proxies)")
 	)
+	flag.Usage = usage
 	flag.Parse()
+
+	pc, err := parseProxy(*proxyURL, *proxyInsecure)
+	if err != nil {
+		log.Fatal(err)
+	}
+	proxyCfg = pc
+	httpClient = clientThroughProxy(pc)
+	if pc != nil {
+		logf("egress proxy: %s (insecure=%v)", pc.String(), pc.Insecure)
+	}
+
 	args := flag.Args()
 	if len(args) == 0 || args[0] == "serve" {
 		log.Fatal(serve(*port, *concurrency))
@@ -239,6 +286,13 @@ func main() {
 		fmt.Println("usage: metaphor [serve|auth ...]")
 		os.Exit(1)
 	}
+}
+
+func envBool(key string, def bool) bool {
+	if v := os.Getenv(key); v != "" {
+		return v == "1" || strings.EqualFold(v, "true") || strings.EqualFold(v, "yes")
+	}
+	return def
 }
 
 func envInt(key string, def int) int {

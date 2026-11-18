@@ -24,6 +24,7 @@ client → :8190 (h2c or HTTP/1.1) → metaphor-bridge → HTTP/2 → llms.withm
 | `main.go` | HTTP server, `/v1/*` proxy, semaphore queue, 429 retry, SSE flush, `/healthz` |
 | `creds.go` | token store (`tokens.json`), JWT expiry parsing, WorkOS refresh + PKCE helpers |
 | `auth.go` | `auth start/finish/refresh/show/gh` subcommands, GitHub → WorkOS hop walking |
+| `proxy.go` | optional egress proxy: HTTP/HTTPS CONNECT (self-signed ok), SOCKS5, buffered-conn handling |
 | `bench/bench.py` | throughput benchmark used for `BENCHMARK.md` |
 | `systemd/` | example unit (edit paths before installing) |
 | `BENCHMARK.md` | measured TPS/TTFT and rate-limit behaviour |
@@ -74,6 +75,10 @@ curl -sS -N http://127.0.0.1:8191/v1/chat/completions -H 'Content-Type: applicat
 5. **Streams are pass-through.** Flush per chunk, never buffer an SSE response, and
    never retry a stream after the first byte reached the client.
 6. **`METAPHOR_DIR` stays outside the repo** and files are written 0600.
+7. **Proxy is transport-only.** `proxy.go` must never change auth, retries or queuing —
+   it only supplies a `DialContext`. `-proxy-insecure` skips verification of the *proxy's*
+   certificate, never the target's. Tokens minted outside the process must be picked up
+   via `reloadIfChanged` (file mtime), so `auth gh` while the bridge is running is safe.
 
 ## Failure playbook
 
