@@ -26,6 +26,9 @@ your client ──HTTP/1.1 or h2c──> metaphor-bridge :8190 ──HTTP/2─�
 Measured throughput and rate-limit behaviour: **[BENCHMARK.md](BENCHMARK.md)**
 (reproduce with `python3 bench/bench.py`).
 
+Working on the code (or driving it with a coding agent)? Read **[AGENTS.md](AGENTS.md)**
+— architecture, invariants, verification commands and the failure playbook.
+
 ## Benchmarks
 
 Measured 2026-11-18 through this bridge (single-stream, `max_tokens=512`,
