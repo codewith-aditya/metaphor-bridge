@@ -23,6 +23,9 @@ your client ──HTTP/1.1 or h2c──> metaphor-bridge :8190 ──HTTP/2─�
 - HTTP/2 upstream, h2c downstream (`curl --http2-prior-knowledge http://127.0.0.1:8190/v1/models`)
 - `/healthz` for token expiry + concurrency
 
+Measured throughput and rate-limit behaviour: **[BENCHMARK.md](BENCHMARK.md)**
+(reproduce with `python3 bench/bench.py`).
+
 ## Build
 
 ```bash
