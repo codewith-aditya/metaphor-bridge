@@ -1,0 +1,20 @@
+[Unit]
+Description=Metaphor LLM bridge (Go, h2) -> llms.withmetaphor.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/metaphor-bridge
+ExecStart=/opt/metaphor-bridge/metaphor-go serve
+Environment=METAPHOR_PORT=8190
+Environment=METAPHOR_CONCURRENCY=1
+Environment=METAPHOR_DIR=/var/lib/metaphor-bridge
+Restart=always
+RestartSec=5
+# tokens.json lives in METAPHOR_DIR (0600) — run as an unprivileged user:
+# User=metaphor
+# Group=metaphor
+
+[Install]
+WantedBy=multi-user.target

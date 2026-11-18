@@ -1,0 +1,19 @@
+# secrets / local state
+tokens.json
+tokens.json.tmp
+pkce.json
+login_url.txt
+session_cookie.txt
+gh_user_session.txt
+gh_sess.txt
+*.log
+
+# build output
+metaphor-go
+metaphor
+
+# editor / os
+.DS_Store
+*.swp
+.idea/
+.vscode/
