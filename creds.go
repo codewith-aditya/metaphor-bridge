@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,20 @@ const (
 var baseDir = func() string {
 	if v := os.Getenv("METAPHOR_DIR"); v != "" {
 		return v
+	}
+	switch runtime.GOOS {
+	case "windows":
+		if d, err := os.UserConfigDir(); err == nil { // %AppData%
+			return filepath.Join(d, "metaphor-bridge")
+		}
+	case "darwin":
+		if h, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(h, ".metaphor")
+		}
+	default:
+		if h, err := os.UserHomeDir(); err == nil && h != "/root" {
+			return filepath.Join(h, ".metaphor")
+		}
 	}
 	return "/root/metaphor"
 }()

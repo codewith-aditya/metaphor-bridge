@@ -17,3 +17,6 @@ metaphor
 *.swp
 .idea/
 .vscode/
+
+# release artifacts (built by CI or locally, uploaded to Releases)
+dist/

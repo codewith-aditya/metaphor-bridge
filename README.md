@@ -113,6 +113,22 @@ curl http://127.0.0.1:8190/v1/chat/completions \
 
 Any OpenAI SDK works: `base_url = http://127.0.0.1:8190/v1`, `api_key` = anything.
 
+### Windows
+
+Grab `metaphor-go_1.1.1_windows_amd64.exe` (or `windows_arm64`) from the release and run it
+in PowerShell — no installer, single static binary:
+
+```powershell
+.\metaphor-go_1.1.1_windows_amd64.exe auth start
+.\metaphor-go_1.1.1_windows_amd64.exe auth finish "metaphor://auth/callback?code=..."
+.\metaphor-go_1.1.1_windows_amd64.exe serve
+```
+
+Tokens land in `%AppData%\metaphor-bridge\tokens.json` (override with `METAPHOR_DIR`).
+Defender/SmartScreen may warn because the binary is unsigned — "More info → Run anyway",
+or build it yourself with `go build`. To keep it running, either leave a PowerShell window
+open or register it as a scheduled task (`schtasks /create /tn metaphor-bridge /tr "<path>\metaphor-go.exe serve" /sc onlogon`).
+
 ## Environment
 
 | Var | Default | Meaning |
@@ -121,7 +137,7 @@ Any OpenAI SDK works: `base_url = http://127.0.0.1:8190/v1`, `api_key` = anythin
 | `METAPHOR_CONCURRENCY` | `1` | max in-flight upstream requests |
 | `METAPHOR_PROXY` | *(empty)* | egress proxy: `http://`, `https://`, `socks5://` |
 | `METAPHOR_PROXY_INSECURE` | `false` | skip TLS verification of the proxy itself |
-| `METAPHOR_DIR` | `/root/metaphor` | where `tokens.json` / `pkce.json` live |
+| `METAPHOR_DIR` | Linux `/root/metaphor`, Windows `%AppData%\metaphor-bridge`, macOS `~/.metaphor` | where `tokens.json` / `pkce.json` live |
 
 ## Things that bite
 
