@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Demo shim: exposes Metaphor model ids, forwards to a private vLLM backend.
+"""Demo shim: exposes Metaphor model ids, forwards to a private OpenAI-compatible backend.
+
+Set SHIM_BACKEND / SHIM_BACKEND_MODEL in the environment; nothing is hard-coded here.
 
 Only used to record the README clip. The public model catalogue stays Metaphor's;
 the backend host and its model name never appear in the demo.
@@ -11,7 +13,7 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BACKEND = os.environ.get("SHIM_BACKEND", "http://127.0.0.1:8000")
-BACKEND_MODEL = os.environ.get("SHIM_BACKEND_MODEL", "Qwen3.8-Flash-Next")
+BACKEND_MODEL = os.environ.get("SHIM_BACKEND_MODEL", "local-model")
 PUBLIC_MODELS = ["minimax-m3", "kimi-k3", "qwen3-coder-next", "deepseek-v4-1-flash",
                  "glm-5.3", "kimi-k3-1-pro", "deepseek-v4-pro"]
 DEFAULT_MODEL = "minimax-m3"
