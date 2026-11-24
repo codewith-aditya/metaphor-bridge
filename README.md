@@ -4,7 +4,13 @@ OpenAI-compatible local API for [Metaphor](https://withmetaphor.com) models — 
 Windows app required. Mints your own account's WorkOS token with the same OAuth flow the
 desktop app uses, keeps it fresh, and proxies `/v1/*` over HTTP/2 on `127.0.0.1`.
 
-![metaphor-go --help](docs/help.png)
+![metaphor-bridge demo](docs/demo.gif)
+
+*Terminal capture of the real binary: build → token status → serve → `/v1/models` →
+streaming `/v1/chat/completions` (first token ~1.1 s). The clip points the bridge at a live
+vLLM upstream with `METAPHOR_UPSTREAM` so it does not touch a Metaphor account quota; the
+proxy path, streaming and queue are the same ones used against
+`https://llms.withmetaphor.com` by default.*
 
 ## Quick start
 

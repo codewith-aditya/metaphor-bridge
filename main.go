@@ -30,7 +30,12 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-const upstreamBase = "https://llms.withmetaphor.com"
+var upstreamBase = func() string {
+	if v := os.Getenv("METAPHOR_UPSTREAM"); v != "" {
+		return strings.TrimRight(v, "/")
+	}
+	return "https://llms.withmetaphor.com"
+}()
 
 const version = "1.1.1"
 
