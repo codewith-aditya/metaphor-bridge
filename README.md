@@ -202,6 +202,7 @@ open or register it as a scheduled task (`schtasks /create /tn metaphor-bridge /
 | Var | Default | Meaning |
 | --- | --- | --- |
 | `METAPHOR_PORT` | `8190` | listen port (127.0.0.1 only) |
+| `METAPHOR_UPSTREAM` | `https://llms.withmetaphor.com` | override the upstream base URL (local vLLM, mirror, tests) |
 | `METAPHOR_CONCURRENCY` | `1` | max in-flight upstream requests |
 | `METAPHOR_PROXY` | *(empty)* | egress proxy: `http://`, `https://`, `socks5://` |
 | `METAPHOR_PROXY_INSECURE` | `false` | skip TLS verification of the proxy itself |
